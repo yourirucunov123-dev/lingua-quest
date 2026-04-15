@@ -155,6 +155,21 @@ const TOPIC_ADVANCED_BANK = {
   "Вопросы": [["Чем больше я читаю, тем лучше понимаю язык", "The more I read, the better I understand the language"]]
 };
 
+const WORD_ALTERNATIVES = {
+  "папа": ["father", "dad", "daddy"],
+  "мама": ["mother", "mom", "mum", "mommy"],
+  "брат": ["brother", "bro"],
+  "сестра": ["sister", "sis"],
+  "привет": ["hello", "hi"],
+  "до свидания": ["goodbye", "bye", "bye bye"],
+  "спасибо": ["thank you", "thanks", "thx"],
+  "пожалуйста": ["please", "you are welcome"],
+  "учитель": ["teacher", "tutor"],
+  "книга": ["book", "textbook"],
+  "машина": ["car", "auto"],
+  "дом": ["house", "home"]
+};
+
 const initialProfile = {
   xp: 0,
   level: 1,
@@ -170,7 +185,8 @@ const state = {
   activeLesson: null,
   taskIndex: 0,
   correctAnswers: 0,
-  buildWords: []
+  buildWords: [],
+  ttsFallbackNotified: false
 };
 
 const elements = {
@@ -309,6 +325,16 @@ function normalize(text) {
   return text.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function getAcceptedAnswers(expected) {
+  if (Array.isArray(expected)) return expected.map((item) => normalize(item));
+  return [normalize(expected)];
+}
+
+function isAnswerCorrect(userInput, expected) {
+  const user = normalize(userInput);
+  return getAcceptedAnswers(expected).includes(user);
+}
+
 function getTodayIso() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -407,7 +433,9 @@ function buildTasksByDifficulty(index, lessonTopic) {
       {
         type: "type",
         prompt: `Напиши по-английски: "${ruWordForType}"`,
-        answer: enWordForType
+        answer: WORD_ALTERNATIVES[ruWordForType]
+          ? [enWordForType, ...WORD_ALTERNATIVES[ruWordForType]]
+          : enWordForType
       },
       {
         type: "arrange",
@@ -697,17 +725,34 @@ function renderTask() {
 }
 
 function speak(text) {
-  // Кодируем текст для URL (чтобы пробелы и знаки не ломали ссылку)
+  // Пытаемся использовать Google TTS, а на мобильных при блокировке
+  // переключаемся на speechSynthesis, чтобы озвучка всегда работала.
   const encodedText = encodeURIComponent(text);
-  
-  // Ссылка на качественный движок Google (en-US - американский английский)
   const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=en&client=tw-ob`;
-
   const audio = new Audio(url);
-  
+  audio.preload = "auto";
+
+  const fallbackSpeak = () => {
+    if (!window.speechSynthesis) {
+      showToast("Озвучка недоступна на этом устройстве");
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.95;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
+
+    if (!state.ttsFallbackNotified) {
+      showToast("Переключено на встроенную озвучку");
+      state.ttsFallbackNotified = true;
+    }
+  };
+
   audio.play().catch(err => {
     console.error("Ошибка озвучки:", err);
-    showToast("Не удалось загрузить голос");
+    fallbackSpeak();
   });
 }
 
@@ -786,7 +831,7 @@ function renderTypeTask(task) {
   checkBtn.addEventListener("click", () => {
     checkBtn.disabled = true;
     input.disabled = true;
-    const ok = normalize(input.value) === normalize(task.answer);
+    const ok = isAnswerCorrect(input.value, task.answer);
     showAnswerResult(ok);
   });
 }

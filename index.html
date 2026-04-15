@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinguaQuest - карта изучения английского</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="top-panel">
+    <div class="brand">
+      <h1>LinguaQuest</h1>
+      <p>Учи английский шаг за шагом, как в игре</p>
+    </div>
+    <div class="mini-stats">
+      <div class="chip">Серия: <strong id="streakValue">0</strong></div>
+      <div class="chip">Уровень: <strong id="levelValue">1</strong></div>
+      <div class="chip">Сердца: <strong id="livesValue">5</strong></div>
+      <div class="chip">Опыт: <strong id="xpValue">0</strong></div>
+    </div>
+    <div class="top-actions">
+      <button id="dailyChallengeBtn" class="orange-btn">Случайный урок</button>
+      <button id="resetProgressBtn" class="gray-btn">Сбросить прогресс</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="path-wrap" id="pathWrap">
+      <svg id="pathSvg" class="path-svg" aria-hidden="true">
+        <path id="pathBase" class="path-base"></path>
+        <path id="pathProgress" class="path-progress"></path>
+      </svg>
+      <div id="pathContainer" class="path-container"></div>
+    </section>
+  </main>
+
+  <section id="lessonOverlay" class="lesson-overlay hidden">
+    <div class="lesson-window">
+      <div class="lesson-top">
+        <h2 id="lessonTitle">Урок</h2>
+        <button id="closeLessonBtn" class="close-btn">×</button>
+      </div>
+      <p id="lessonThemeText" class="lesson-theme-text"></p>
+      <div class="lesson-progress">
+        <div id="lessonProgressFill"></div>
+      </div>
+      <p id="lessonProgressText" class="lesson-progress-text">Задание 1 из 5</p>
+      <div id="questionStage" class="question-stage"></div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="script.js"></script>
+</body>
+</html>

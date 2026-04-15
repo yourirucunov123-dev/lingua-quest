@@ -725,34 +725,31 @@ function renderTask() {
 }
 
 function speak(text) {
-  // Пытаемся использовать Google TTS, а на мобильных при блокировке
-  // переключаемся на speechSynthesis, чтобы озвучка всегда работала.
-  const encodedText = encodeURIComponent(text);
-  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=en&client=tw-ob`;
-  const audio = new Audio(url);
-  audio.preload = "auto";
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
-  const fallbackSpeak = () => {
+  // На телефонах сразу используем встроенную озвучку:
+  // так надежнее, чем ждать отказ от внешнего URL.
+  if (isMobile) {
     if (!window.speechSynthesis) {
       showToast("Озвучка недоступна на этом устройстве");
       return;
     }
-
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 0.95;
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
+    return;
+  }
 
-    if (!state.ttsFallbackNotified) {
-      showToast("Переключено на встроенную озвучку");
-      state.ttsFallbackNotified = true;
-    }
-  };
+  // На ПК оставляем прежний Google-голос.
+  const encodedText = encodeURIComponent(text);
+  const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodedText}&tl=en&client=tw-ob`;
+  const audio = new Audio(url);
 
   audio.play().catch(err => {
     console.error("Ошибка озвучки:", err);
-    fallbackSpeak();
+    showToast("Не удалось загрузить голос");
   });
 }
 
